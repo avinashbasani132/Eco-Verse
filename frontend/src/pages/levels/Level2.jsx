@@ -1,10 +1,12 @@
+// frontend/src/pages/levels/Level2.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sword, Compass, Shield, Heart, Skull, ArrowLeft } from 'lucide-react';
+import { Compass, Heart, Skull, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 import AudioEngine from '../../utils/AudioEngine';
 import StoryDialogue from '../../components/StoryDialogue';
+import API_BASE_URL from '../../config/api';
 
 export default function Level2() {
   const navigate = useNavigate();
@@ -17,7 +19,18 @@ export default function Level2() {
   const [feedback, setFeedback] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/levels/2').then(res => setData(res.data)).catch(console.error);
+    axios.get(`${API_BASE_URL}/api/levels/2`)
+      .then(res => setData(res.data))
+      .catch(err => {
+        console.error("Failed to load Level 2:", err);
+        setData({
+          title: "The Trial of Weapons",
+          intro_text: "You enter the training grounds. Three sacred paths are offered. The choices you make create branching paths in your destiny, much like conditional logic.",
+          scenes: [
+            { speaker: "Mentor", text: "Your path depends on your attributes. Let us test your conditional logic." }
+          ]
+        });
+      });
     AudioEngine.playDarkAmbient();
     return () => AudioEngine.stop();
   }, []);
@@ -26,8 +39,21 @@ export default function Level2() {
 
   const handleLogic = (isCorrect, msg, advanceDelay = 1500) => {
     setFeedback({ isCorrect, msg });
-    if (isCorrect) setTimeout(() => { setFeedback(null); setTaskIndex(t=>t+1); }, advanceDelay);
-    else setTimeout(() => { setFeedback(null); setStats(s => ({...s, hp: s.hp-20})); }, 2000);
+    if (isCorrect) {
+      setTimeout(() => {
+        setFeedback(null);
+        if (taskIndex === 3) {
+          const current = parseInt(localStorage.getItem('ecoVerseUnlocked') || '1', 10);
+          localStorage.setItem('ecoVerseUnlocked', Math.max(current, 3));
+        }
+        setTaskIndex(t => t + 1);
+      }, advanceDelay);
+    } else {
+      setTimeout(() => {
+        setFeedback(null);
+        setStats(s => ({ ...s, hp: s.hp - 20 }));
+      }, 2000);
+    }
   };
 
   const renderTask = () => {
@@ -36,10 +62,10 @@ export default function Level2() {
         return (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-6">
             <h3 className="text-2xl text-blue-400 font-bold">Task 1: The First Condition</h3>
-            <p className="text-gray-300">"If you hold a shield AND a sword..." what logical condition is required to pass?</p>
+            <p className="text-gray-300">"If you hold a shield AND a sword..." what logical operator is required in Python?</p>
             <div className="flex flex-col gap-3">
-              {['OR condition', 'AND condition', 'NOT condition'].map(opt => (
-                <button key={opt} onClick={() => handleLogic(opt === 'AND condition', opt === 'AND condition' ? 'Correct. `and` requires both.' : 'Incorrect logic.')} className="p-4 bg-blue-900/20 border border-blue-500/30 hover:bg-blue-800 rounded text-left text-white">
+              {['or condition', 'and condition', 'not condition'].map(opt => (
+                <button key={opt} onClick={() => handleLogic(opt === 'and condition', opt === 'and condition' ? 'Correct. `and` requires both conditions to be true.' : 'Incorrect operator.')} className="p-4 bg-blue-900/20 border border-blue-500/30 hover:bg-blue-800 rounded text-left text-white cursor-pointer font-mono">
                   {opt}
                 </button>
               ))}
@@ -51,10 +77,10 @@ export default function Level2() {
         return (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-6">
             <h3 className="text-2xl text-blue-400 font-bold">Task 2: Stat Comparison</h3>
-            <p className="text-gray-300">If `strength &gt; 50`, you can fight. If not, run. Your strength is {stats.str}. What happens?</p>
+            <p className="text-gray-300">If `strength &gt; 50`, you can fight. If not, run. Your strength is {stats.str}. What branch executes?</p>
             <div className="flex gap-4">
-              <button onClick={() => handleLogic(false, 'You lack the strength! (Damage taken)')} className="flex-1 p-4 border border-red-500/50 hover:bg-red-900/50 rounded font-bold text-white">Fight</button>
-              <button onClick={() => handleLogic(true, 'Logically sound. You retreated safely.')} className="flex-1 p-4 border border-blue-500/50 hover:bg-blue-900/50 rounded font-bold text-white">Run</button>
+              <button onClick={() => handleLogic(false, 'You lack the strength! (Damage taken)')} className="flex-1 p-4 border border-red-500/50 hover:bg-red-900/50 rounded font-bold text-white cursor-pointer">Fight</button>
+              <button onClick={() => handleLogic(true, 'Logically sound. The else block retreated safely.')} className="flex-1 p-4 border border-blue-500/50 hover:bg-blue-900/50 rounded font-bold text-white cursor-pointer">Run (else)</button>
             </div>
             {feedback && <p className={`mt-2 font-bold ${feedback.isCorrect ? 'text-green-400' : 'text-red-400'}`}>{feedback.msg}</p>}
           </motion.div>
@@ -66,14 +92,11 @@ export default function Level2() {
             <p className="text-gray-300">The refugee cries out! Do you help them? Condition: `courage &gt;= 60`. Your courage is {stats.courage}.</p>
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-4">
-                <button onClick={() => setStats({...stats, courage: stats.courage + 20})} className="px-4 py-2 bg-yellow-600 rounded text-sm font-bold text-white">BOOST COURAGE (+20)</button>
-                <span className="text-yellow-400 font-mono">Current: {stats.courage}</span>
+                <button onClick={() => setStats({...stats, courage: stats.courage + 20})} className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded text-sm font-bold text-white cursor-pointer">BOOST COURAGE (+20)</button>
+                <span className="text-yellow-400 font-mono">Current Courage: {stats.courage}</span>
               </div>
-              <button onClick={() => {
-                if(stats.courage >= 60) handleLogic(true, "Courage threshold met! They are saved.");
-                else handleLogic(false, "Courage test failed. (Condition evaluates to False)");
-              }} className="p-4 bg-emerald-600 rounded font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.5)] border border-emerald-400 text-black">
-                Attempt Rescue
+              <button onClick={() => handleLogic(stats.courage >= 60, stats.courage >= 60 ? 'Condition satisfied! Courage >= 60.' : 'Courage condition failed! Boost your courage first.')} className="p-4 bg-emerald-600 hover:bg-emerald-500 rounded font-bold text-white cursor-pointer">
+                EXECUTE RESCUE (courage &gt;= 60)
               </button>
             </div>
             {feedback && <p className={`mt-2 font-bold ${feedback.isCorrect ? 'text-green-400' : 'text-red-400'}`}>{feedback.msg}</p>}
@@ -82,25 +105,24 @@ export default function Level2() {
       case 3:
         return (
           <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-6">
-            <h3 className="text-2xl text-blue-400 font-bold">Task 4: The Nested Strategy</h3>
-            <p className="text-gray-300 font-mono text-sm bg-black p-4 rounded border border-gray-700">
-              if hp &gt; 30:<br/>
-              &nbsp;&nbsp;rescue()<br/>
-              elif mana &gt; 20:<br/>
-              &nbsp;&nbsp;spell()<br/>
-              else:<br/>
-              &nbsp;&nbsp;retreat()
-            </p>
-            <p className="text-gray-200">Your Stats: HP({stats.hp}) | MANA({stats.mana}). What block executes?</p>
+            <h3 className="text-2xl text-blue-400 font-bold">Task 4: Multi-Branch Elif Logic</h3>
+            <pre className="p-4 bg-black rounded text-green-400 font-mono text-sm">
+{`if hp > 50:
+    action = "strike()"
+elif mana > 20:
+    action = "spell()"
+else:
+    action = "retreat()"`}
+            </pre>
+            <p className="text-gray-300">With HP: {stats.hp} and Mana: {stats.mana}, which action executes?</p>
             <div className="flex gap-4">
-              {['rescue()', 'spell()', 'retreat()'].map(opt => (
+              {['strike()', 'spell()', 'retreat()'].map(opt => (
                 <button key={opt} onClick={() => {
-                  let correct = '';
-                  if(stats.hp > 30) correct = 'rescue()';
-                  else if(stats.mana > 20) correct = 'spell()';
-                  else correct = 'retreat()';
-                  handleLogic(opt === correct, opt === correct ? 'Execution predicted perfectly!' : 'Incorrect branch executed.');
-                }} className="flex-1 py-3 border border-gray-500 rounded hover:bg-gray-800 text-white">{opt}</button>
+                  let correct = 'retreat()';
+                  if (stats.hp > 50) correct = 'strike()';
+                  else if (stats.mana > 20) correct = 'spell()';
+                  handleLogic(opt === correct, opt === correct ? 'Execution predicted perfectly!' : 'Incorrect branch.');
+                }} className="flex-1 py-3 border border-gray-500 rounded hover:bg-gray-800 text-white font-mono cursor-pointer">{opt}</button>
               ))}
             </div>
             {feedback && <p className={`mt-2 font-bold ${feedback.isCorrect ? 'text-green-400' : 'text-red-400'}`}>{feedback.msg}</p>}
@@ -108,16 +130,16 @@ export default function Level2() {
         );
       case 4:
         return (
-           <motion.div 
-              key="end" 
-              initial={{opacity:0, y:20}} 
-              animate={{opacity:1, y:0}} 
-              className="mb-10 w-full cursor-pointer" 
-              onClick={() => navigate('/story/map')}
-           >
-              <StoryDialogue speaker="SYSTEM" text="You have mastered logic gating. The branching paths hold no fear over you. The Title: Apprentice of the Blade is yours." />
-              <p className="text-center text-blue-400 font-mono text-xs tracking-[0.3em] mt-4 animate-pulse uppercase">CLICK TO RETURN TO MAP</p>
-           </motion.div>
+          <motion.div 
+            key="end" 
+            initial={{opacity:0, y:20}} 
+            animate={{opacity:1, y:0}} 
+            className="mb-10 w-full cursor-pointer" 
+            onClick={() => navigate('/map')}
+          >
+            <StoryDialogue speaker="SYSTEM" text="You have mastered conditional logic! Sector 03 (Loops & Iteration) is now unlocked on your map." />
+            <p className="text-center text-blue-400 font-mono text-xs tracking-[0.3em] mt-4 animate-pulse uppercase">CLICK TO RETURN TO MAP</p>
+          </motion.div>
         );
       default: return null;
     }
@@ -129,11 +151,10 @@ export default function Level2() {
         <div className="fixed inset-0 z-[100] bg-red-950 flex flex-col justify-center items-center">
           <Skull size={80} className="text-red-500 mb-6 animate-pulse" />
           <h1 className="text-6xl font-black text-white mb-4">LOGIC FAILED</h1>
-          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-red-600 hover:bg-white hover:text-red-600 transition-colors rounded font-bold text-white tracking-widest uppercase">RETRY LEVEL</button>
+          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-red-600 hover:bg-white hover:text-red-600 transition-colors rounded font-bold text-white tracking-widest uppercase cursor-pointer">RETRY LEVEL</button>
         </div>
       )}
 
-      {/* Cinematic Background with Hue Rotate to fake a new blue/steampunk level */}
       <AnimatePresence mode="crossfade">
         <motion.img
            key={phase}
@@ -142,14 +163,14 @@ export default function Level2() {
            exit={{ opacity: 0 }}
            transition={{ duration: 1 }}
            src="/images/level1_intro_1774589620194.png"
-           className="absolute inset-0 w-full h-full object-cover object-center hue-rotate-180 brightness-75 constrast-125"
+           className="absolute inset-0 w-full h-full object-cover object-center hue-rotate-180 brightness-75 contrast-125"
         />
       </AnimatePresence>
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
 
-      {/* Top Bar for Navigation */}
+      {/* Top Navigation */}
       <div className="absolute top-6 left-6 z-50">
-        <button onClick={() => navigate('/story/map')} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors bg-black/50 px-4 py-2 rounded-full backdrop-blur-md border border-white/10 uppercase font-mono tracking-widest text-xs">
+        <button onClick={() => navigate('/map')} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors bg-black/50 px-4 py-2 rounded-full backdrop-blur-md border border-white/10 uppercase font-mono tracking-widest text-xs cursor-pointer">
           <ArrowLeft size={16} /> Hub
         </button>
       </div>
@@ -173,7 +194,7 @@ export default function Level2() {
           {phase === 'scene' && (
             <motion.div key="scene1" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={() => setPhase('tasks')} className="cursor-pointer">
               <StoryDialogue speaker={data.scenes[0].speaker} text={data.scenes[0].text} />
-              <p className="text-center text-white/40 font-mono text-xs tracking-[0.3em] mt-4 animate-pulse">BEGIN CONDITIONAL TRIAL</p>
+              <p className="text-center text-white/40 font-mono text-xs tracking-[0.3em] mt-4 animate-pulse uppercase">BEGIN CONDITIONAL TRIAL</p>
             </motion.div>
           )}
 

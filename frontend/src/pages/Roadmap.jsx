@@ -1,169 +1,217 @@
+// frontend/src/pages/Roadmap.jsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Map, Loader2, Download, Search, CheckCircle } from 'lucide-react';
+import { Map as MapIcon, Loader2, Download, Search, CheckCircle } from 'lucide-react';
 import axios from 'axios';
-
-// Inline AnimatedCard to resolve missing component dependency
-const AnimatedCard = ({ children, delay = 0, className = "" }) => {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-                type: "spring",
-                stiffness: 100,
-                damping: 15,
-                delay: delay
-            }}
-            className={`glass-panel p-6 md:p-8 bg-black/40 border-t border-white/10 ${className}`}
-        >
-            {children}
-        </motion.div>
-    );
-};
+import AnimatedCard from '../components/AnimatedCard';
+import API_BASE_URL from '../config/api';
 
 const Roadmap = () => {
-    const [role, setRole] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [roadmap, setRoadmap] = useState(null);
-    const [downloaded, setDownloaded] = useState(false);
+  const navigate = useNavigate();
+  const [role, setRole] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [roadmap, setRoadmap] = useState(null);
+  const [downloaded, setDownloaded] = useState(false);
+  const [error, setError] = useState(null);
 
-    const handleGenerate = async (e) => {
-        e.preventDefault();
-        if (!role.trim()) return;
+  const handleGenerate = async (e) => {
+    e.preventDefault();
+    if (!role.trim()) return;
+    setLoading(true);
+    setRoadmap(null);
+    setDownloaded(false);
+    setError(null);
 
-        setLoading(true);
-        setRoadmap(null);
-        setDownloaded(false);
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/generate-roadmap`, { role: role.trim() });
+      setRoadmap(res.data);
+    } catch (err) {
+      console.error("Roadmap generation error:", err);
+      setError(err.response?.data?.error || "Failed to generate roadmap. Please verify backend connection & Gemini API key.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        try {
-            const res = await axios.post('http://localhost:5000/api/generate-roadmap', { role });
-            setRoadmap(res.data);
-        } catch (err) {
-            console.error(err);
-            alert("Failed to generate roadmap. System error.");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const downloadRoadmapPDF = () => {
+    if (!roadmap) return;
 
-    const downloadRoadmap = () => {
-        if (!roadmap) return;
+    const printWindow = window.open('', '', 'width=900,height=700');
+    if (!printWindow) {
+      alert("Pop-up blocked! Please allow pop-ups to print/save your roadmap as PDF.");
+      return;
+    }
 
-        let content = `=======================================\n`;
-        content += ` TECH ROADMAP: ${roadmap.role.toUpperCase()}\n`;
-        content += `=======================================\n\n`;
-        content += `MISSION BRIEF:\n${roadmap.description}\n\n`;
-        content += `---------------------------------------\n\n`;
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${roadmap.role} Learning Pathway — Eco-Verse</title>
+          <style>
+            body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1f2937; line-height: 1.6; padding: 40px; max-width: 800px; margin: auto; }
+            h1 { color: #7e22ce; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; font-size: 28px; text-transform: uppercase; letter-spacing: 1px;}
+            h2 { color: #374151; margin-top: 35px; font-size: 20px; }
+            ul { list-style-type: none; padding-left: 0; }
+            li { margin-bottom: 12px; padding-left: 24px; position: relative; font-size: 15px; }
+            li:before { content: "▹"; color: #9333ea; position: absolute; left: 0; font-weight: bold; font-size: 18px; line-height: 1; }
+            .desc { font-size: 16px; color: #4b5563; font-style: italic; background-color: #f3f4f6; padding: 15px; border-left: 4px solid #9333ea; border-radius: 4px;}
+            .footer { margin-top: 60px; font-size: 12px; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 20px; text-transform: uppercase; letter-spacing: 2px; }
+            @media print {
+              body { padding: 0; }
+              .page-break { page-break-before: always; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>TECH ROADMAP: ${roadmap.role}</h1>
+          <p class="desc">${roadmap.description}</p>
+          ${roadmap.phases.map((phase, i) => `
+            <div style="page-break-inside: avoid;">
+              <h2>Phase ${i + 1}: ${phase.phase_name}</h2>
+              <ul>
+                ${phase.concepts.map(c => `<li>${c}</li>`).join('')}
+              </ul>
+            </div>
+          `).join('')}
+          <div class="footer">Generated by Eco-Verse Core Intelligence</div>
+        </body>
+      </html>
+    `;
 
-        roadmap.phases.forEach((phase, i) => {
-            content += `[ PHASE ${i + 1} ] ${phase.phase_name}\n`;
-            phase.concepts.forEach(c => content += `  >> ${c}\n`);
-            content += '\n';
-        });
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
 
-        content += `\nGenerated by Eco-Verse Core Intelligence.`;
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
 
-        // Create a Blob and trigger browser download
-        const blob = new Blob([content], { type: "text/plain" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${roadmap.role.replace(/\s+/g, '_').toLowerCase()}_roadmap.txt`;
-        link.click();
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 3000);
+  };
 
-        setDownloaded(true);
-        setTimeout(() => setDownloaded(false), 3000);
-    };
+  return (
+    <div className="max-w-4xl mx-auto flex flex-col min-h-[70vh] items-center">
+      <div className="text-center mb-10 w-full">
+        <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center gap-4 uppercase">
+          <MapIcon className="text-purple-400" size={40} /> ROADMAP ARCHITECT
+        </h2>
+        <p className="text-gray-400 text-lg">Input a technology role to synthesize a step-by-step career progression sequence.</p>
+      </div>
 
-    return (
-        <div className="max-w-4xl mx-auto flex flex-col min-h-[70vh] items-center">
-            <div className="text-center mb-10 w-full">
-                <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center gap-4">
-                    <Map className="text-purple-400" size={40} /> ROADMAP ARCHITECT
-                </h2>
-                <p className="text-gray-400 text-lg">Input a technology role to compile a step-by-step career logic sequence.</p>
+      {!roadmap && (
+        <AnimatedCard className="w-full max-w-xl p-8 border border-purple-500/30 shadow-[0_0_40px_rgba(168,85,247,0.1)] bg-black/60 backdrop-blur-xl rounded-2xl">
+          <form onSubmit={handleGenerate} className="flex flex-col gap-6">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-400 w-6 h-6" />
+              <input
+                type="text"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                disabled={loading}
+                placeholder="e.g. Full Stack Developer, DevOps Engineer, AI Architect..."
+                className="w-full bg-black/80 border-2 border-purple-500/40 rounded-xl py-4 pl-14 pr-6 text-white text-lg placeholder-gray-500 focus:outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-400/20 transition-all disabled:opacity-50"
+              />
             </div>
 
-            {!roadmap && (
-                <AnimatedCard className="w-full max-w-xl p-8 border border-purple-500/30 shadow-[0_0_40px_rgba(168,85,247,0.1)]">
-                    <form onSubmit={handleGenerate} className="flex flex-col gap-6">
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-400 w-6 h-6" />
-                            <input
-                                type="text"
-                                value={role}
-                                onChange={(e) => setRole(e.target.value)}
-                                disabled={loading}
-                                placeholder="e.g. Full Stack Developer, Data Scientist..."
-                                className="w-full bg-black/60 border-2 border-purple-500/40 rounded-xl py-4 pl-14 pr-6 text-white text-lg placeholder-gray-500 focus:outline-none focus:border-purple-400 focus:ring-4 focus:ring-purple-400/20 transition-all disabled:opacity-50"
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={!role.trim() || loading}
-                            className={`w-full py-4 rounded-xl font-bold text-lg tracking-widest transition-all ${loading ? "bg-purple-900/50 text-purple-300 border-2 border-purple-500/30" : "bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]"
-                                }`}
-                        >
-                            {loading ? (
-                                <span className="flex items-center justify-center gap-3">
-                                    <Loader2 className="animate-spin" /> COMPILING...
-                                </span>
-                            ) : "GENERATE PATHWAY"}
-                        </button>
-                    </form>
-                </AnimatedCard>
-            )}
-
             <AnimatePresence>
-                {roadmap && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 bg-purple-900/20 p-6 rounded-2xl border border-purple-500/30">
-                            <div>
-                                <h3 className="text-sm font-bold tracking-widest text-purple-400 uppercase mb-1">Generated Pathway</h3>
-                                <h2 className="text-3xl font-black text-white">{roadmap.role}</h2>
-                                <p className="text-gray-300 mt-2 max-w-xl">{roadmap.description}</p>
-                            </div>
-
-                            <button
-                                onClick={downloadRoadmap}
-                                className="flex items-center gap-2 bg-white text-black hover:bg-gray-200 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shrink-0"
-                            >
-                                {downloaded ? <CheckCircle size={20} className="text-green-600" /> : <Download size={20} />}
-                                {downloaded ? "SAVED TO DEVICE" : "DOWNLOAD TEXT LOG"}
-                            </button>
-                        </div>
-
-                        <div className="relative border-l-2 border-purple-500/30 ml-4 pl-8 pb-8 space-y-8">
-                            {roadmap.phases.map((phase, idx) => (
-                                <div key={idx} className="relative">
-                                    {/* Timeline dot */}
-                                    <div className="absolute -left-[41px] top-4 w-5 h-5 bg-purple-500 rounded-full border-4 border-[#020617] shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
-
-                                    <AnimatedCard delay={idx * 0.1} className="p-6 border border-gray-800 bg-black/40 hover:border-purple-500/40 transition-colors">
-                                        <h4 className="text-xl font-bold text-purple-300 mb-4">{phase.phase_name}</h4>
-                                        <ul className="space-y-3">
-                                            {phase.concepts.map((concept, i) => (
-                                                <li key={i} className="text-gray-300 flex items-start gap-3 text-lg">
-                                                    <span className="text-purple-500 mt-1">▹</span> {concept}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </AnimatedCard>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex justify-center mt-8">
-                            <button onClick={() => setRoadmap(null)} className="text-gray-500 hover:text-white transition-colors font-mono tracking-widest uppercase">
-                                ← Generate New Pathway
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="text-red-400 text-center font-mono text-sm bg-red-900/20 border border-red-500/30 py-3 px-4 rounded-xl"
+                >
+                  [ ERROR: {error} ]
+                </motion.div>
+              )}
             </AnimatePresence>
-        </div>
-    );
+
+            <button
+              type="submit"
+              disabled={!role.trim() || loading}
+              className={`w-full py-4 rounded-xl font-bold text-lg tracking-widest transition-all ${
+                loading
+                  ? "bg-purple-900/50 text-purple-300 border-2 border-purple-500/30 cursor-not-allowed"
+                  : "bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)] cursor-pointer"
+              }`}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-3">
+                  <Loader2 className="animate-spin" /> COMPILING PATHWAY...
+                </span>
+              ) : (
+                "GENERATE PATHWAY"
+              )}
+            </button>
+          </form>
+        </AnimatedCard>
+      )}
+
+      <AnimatePresence>
+        {roadmap && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 bg-purple-900/20 p-6 rounded-2xl border border-purple-500/30">
+              <div>
+                <h3 className="text-xs font-bold tracking-widest text-purple-400 uppercase mb-1">Generated Pathway</h3>
+                <h2 className="text-3xl font-black text-white">{roadmap.role}</h2>
+                <p className="text-gray-300 mt-2 max-w-xl">{roadmap.description}</p>
+              </div>
+              <button
+                onClick={downloadRoadmapPDF}
+                className="flex items-center gap-2 bg-white text-black hover:bg-gray-200 px-6 py-3 rounded-xl font-bold transition-all shadow-lg shrink-0 cursor-pointer"
+              >
+                {downloaded ? <CheckCircle size={20} className="text-green-600" /> : <Download size={20} />}
+                {downloaded ? "PDF READY" : "PRINT AS PDF"}
+              </button>
+            </div>
+
+            <div className="relative border-l-2 border-purple-500/30 ml-4 pl-8 pb-8 space-y-8">
+              {roadmap.phases.map((phase, idx) => (
+                <div key={idx} className="relative">
+                  <div className="absolute -left-[41px] top-4 w-5 h-5 bg-purple-500 rounded-full border-4 border-[#020617] shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
+                  <AnimatedCard delay={idx * 0.1} className="p-6 border border-gray-800 bg-black/40 hover:border-purple-500/40 transition-colors rounded-2xl">
+                    <h4 className="text-xl font-bold text-purple-300 mb-4">{phase.phase_name}</h4>
+                    <ul className="space-y-3">
+                      {phase.concepts.map((concept, i) => (
+                        <li key={i} className="text-gray-300 flex items-start gap-3 text-lg">
+                          <span className="text-purple-500 mt-1">▹</span> {concept}
+                        </li>
+                      ))}
+                    </ul>
+                  </AnimatedCard>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-center gap-4 mt-8">
+              <button
+                onClick={() => { setRoadmap(null); setRole(''); }}
+                className="px-6 py-3 bg-purple-950/60 border border-purple-500/30 text-purple-300 hover:text-white rounded-xl transition-colors font-mono tracking-widest uppercase text-sm cursor-pointer"
+              >
+                ← Generate New Pathway
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="px-6 py-3 bg-white/5 border border-white/10 text-gray-400 hover:text-white rounded-xl transition-colors font-mono tracking-widest uppercase text-sm cursor-pointer"
+              >
+                Return to Hub
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <button
+        onClick={() => navigate('/')}
+        className="mt-8 text-gray-500 hover:text-white transition cursor-pointer font-mono tracking-widest text-sm"
+      >
+        ← RETURN TO HUB
+      </button>
+    </div>
+  );
 };
 
 export default Roadmap;
