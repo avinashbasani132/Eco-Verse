@@ -1,0 +1,12 @@
+{
+  "title": "The Endless Horde",
+  "concept": "Loops",
+  "intro_text": "Outside the capital, thousands of weak enemies flood the plains. A hero cannot manually strike each enemy one by one. You must harness the power of repetitive action: Loops.",
+  "scenes": [
+    {
+      "type": "dialogue",
+      "speaker": "Commander",
+      "text": "They just keep coming! Automate your strikes or we are lost!"
+    }
+  ]
+}

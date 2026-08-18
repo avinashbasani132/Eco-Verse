@@ -1,0 +1,12 @@
+{
+  "title": "The Trial of Weapons",
+  "concept": "If / Elif / Else",
+  "intro_text": "You enter the training grounds. Three sacred weapons are offered: Sword, Bow, and Axe. The choices you make create branching paths in your destiny, much like conditional logic.",
+  "scenes": [
+    {
+      "type": "dialogue",
+      "speaker": "Mentor",
+      "text": "Your path depends on your attributes. Let us test your conditions."
+    }
+  ]
+}

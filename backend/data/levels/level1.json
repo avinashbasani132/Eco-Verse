@@ -1,0 +1,17 @@
+{
+  "title": "The Summoning of the Hero",
+  "concept": "Variables and Data Types",
+  "intro_text": "The kingdom’s last sorcerers summon you from another world. The royal court needs to record your identity, age, and class before the journey begins. This is your first lesson: storing information in memory as Variables.",
+  "scenes": [
+    {
+      "type": "dialogue",
+      "speaker": "Royal Scribe",
+      "text": "Quickly! We must document your essence. What is your chosen identifier?"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "Oracle",
+      "text": "Remember, the world stores data in logical structures. Strings, Integers, and Booleans."
+    }
+  ]
+}

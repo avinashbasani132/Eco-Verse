@@ -1,0 +1,12 @@
+{
+  "title": "The Vault of Relics",
+  "concept": "Data Structures",
+  "intro_text": "Deep below the castle lies the Vault of Relics. You must sort your party, organize supplies, and decode the immutable prophecy.",
+  "scenes": [
+    {
+      "type": "dialogue",
+      "speaker": "Vault Keeper",
+      "text": "Organization is the key to survival. Separate your Arrays, Tuples, and Sets carefully."
+    }
+  ]
+}

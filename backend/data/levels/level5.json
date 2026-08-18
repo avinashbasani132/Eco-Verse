@@ -1,0 +1,12 @@
+{
+  "title": "The Spellcraft Library",
+  "concept": "Functions",
+  "intro_text": "In the ancient library, spells are written once and used many times. Repeating actions manually is wasteful. It is time to forge reusable magical functions.",
+  "scenes": [
+    {
+      "type": "dialogue",
+      "speaker": "Archmage",
+      "text": "Encapsulate your logic, Hero! Spells require parameters and return powerful results."
+    }
+  ]
+}

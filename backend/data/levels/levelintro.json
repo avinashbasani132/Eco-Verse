@@ -1,0 +1,16 @@
+{
+  "title": "Prologue: The Fall of VMR",
+  "concept": "Intro",
+  "scenes": [
+    {
+      "type": "dialogue",
+      "speaker": "Royal Sorcerer",
+      "text": "The Demon King Koushik has broken the realm. Our only hope is the ancient summoning ritual..."
+    },
+    {
+      "type": "dialogue",
+      "speaker": "Royal Sorcerer",
+      "text": "You must awaken, Hero! The kingdom of Asterveil commands you!"
+    }
+  ]
+}

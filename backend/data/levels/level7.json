@@ -1,0 +1,12 @@
+{
+  "title": "Final Siege: The Demon King’s Throne",
+  "concept": "Full Integration / Final Boss",
+  "intro_text": "The Demon King Koushik waits in the shattered throne room. You must combine all previous lessons—variables, conditionals, loops, structures, functions, and classes—to survive his multi-phase siege.",
+  "scenes": [
+    {
+      "type": "dialogue",
+      "speaker": "Demon King Koushik",
+      "text": "YOU DARE CHALLENGE MY LOGIC? I WILL DELETE YOU FROM MEMORY!"
+    }
+  ]
+}

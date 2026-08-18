@@ -1,0 +1,12 @@
+{
+  "title": "The Guild of Living Armor",
+  "concept": "Classes and Objects",
+  "intro_text": "At the warrior guild, weapons and companions are not just static items; they are living systems with properties and behaviors. Here, you learn Object-Oriented creation.",
+  "scenes": [
+    {
+      "type": "dialogue",
+      "speaker": "Guildmaster",
+      "text": "Everything is a blueprint. Create a Hero class to ascend to True Commander status."
+    }
+  ]
+}
