@@ -1,0 +1,26 @@
+{
+  "name": "eco-verse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Eco-Verse - The Code Restoration Odyssey",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "start": "npm start --workspace=backend",
+    "build": "npm run build --workspace=frontend",
+    "dev": "npm run dev --workspace=frontend",
+    "dev:backend": "npm start --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend"
+  },
+  "keywords": [
+    "education",
+    "gamified-learning",
+    "react",
+    "express",
+    "gemini-ai"
+  ],
+  "author": "Avinash Basani",
+  "license": "ISC"
+}
